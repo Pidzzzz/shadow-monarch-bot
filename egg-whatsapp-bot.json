@@ -1,0 +1,80 @@
+{
+  "_comment": "Pterodactyl WhatsApp Bot Egg - Import this JSON to your Pterodactyl panel",
+  "meta": {
+    "version": "1.0.0",
+    "update_url": null,
+    "author": "OpenCode"
+  },
+  "exported_at": "2025-06-27T12:00:00+07:00",
+  "name": "WhatsApp Bot",
+  "author": "admin@example.com",
+  "description": "WhatsApp Bot using Baileys library (Node.js). Supports auto-reconnect, command handler, SQLite storage.",
+  "features": [
+    "startup",
+    "eula"
+  ],
+  "docker_images": {
+    "node_alpine": "ghcr.io/parkervcp/yolks:nodejs_20"
+  },
+  "startup": "node /home/container/src/index.js",
+  "config": {
+    "files": "{}",
+    "startup": "{\"done\":\"✅ Bot connected\"}",
+    "logs": "{}",
+    "stop": "^C"
+  },
+  "scripts": {
+    "installation": {
+      "script": "#!/bin/bash\napk add --no-cache git python3 make g++\ngit clone {{BOT_REPO}} . 2>/dev/null || echo \"Using existing files\"\nnpm install\nexit 0",
+      "container": "node:20-bookworm",
+      "entrypoint": "bash"
+    }
+  },
+  "variables": [
+    {
+      "name": "Bot Prefix",
+      "description": "Prefix for bot commands",
+      "env_variable": "PREFIX",
+      "default_value": ".",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:5"
+    },
+    {
+      "name": "Bot Name",
+      "description": "Display name of the bot",
+      "env_variable": "BOT_NAME",
+      "default_value": "WhatsAppBot",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string|max:32"
+    },
+    {
+      "name": "Bot Mode",
+      "description": "Bot mode: public or private",
+      "env_variable": "MODE",
+      "default_value": "public",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string"
+    },
+    {
+      "name": "Owner Number",
+      "description": "Owner WhatsApp number with country code (e.g. 62812...)",
+      "env_variable": "OWNER_NUMBER",
+      "default_value": "",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "nullable|string|max:20"
+    },
+    {
+      "name": "Log Level",
+      "description": "Pino log level: trace, debug, info, warn, error, fatal",
+      "env_variable": "LOG_LEVEL",
+      "default_value": "warn",
+      "user_viewable": true,
+      "user_editable": true,
+      "rules": "required|string"
+    }
+  ]
+}
