@@ -16,7 +16,7 @@ let db = null;
 let reconnectTimer = null;
 
 async function startBot() {
-  if (!db) { db = new DB(); await db._ready; }
+  if (!db) { db = new DB(); }
   const hasAuth = fs.existsSync('auth_info/creds.json');
   const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
