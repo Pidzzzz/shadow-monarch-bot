@@ -2,39 +2,47 @@ require('dotenv').config();
 
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
-const path = require('path');
+const qrcode = require('qrcode-terminal');
 const CommandHandler = require('./lib/CommandHandler');
 const DB = require('./lib/Database');
 const SL = require('./lib/SLDesign');
-const StickerMaker = require('./lib/StickerMaker');
 
 const PREFIX = process.env.PREFIX || '.';
 const handler = new CommandHandler(PREFIX);
-const db = new DB();
+
+let sock = null;
+let db = null;
 
 async function startBot() {
+  db = new DB();
+  await db._ready;
   const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
-  const sock = makeWASocket({
+  sock = makeWASocket({
     auth: state,
     logger: pino({ level: process.env.LOG_LEVEL || 'warn' }),
     browser: ['Ubuntu', 'Chrome', '20.0.04'],
-    printQRInTerminal: true,
   });
 
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', (update) => {
     const { connection, lastDisconnect, qr } = update;
-    if (qr) console.log('Scan QR code above with WhatsApp');
-    if (connection === 'open') console.log('✅ Shadow Monarch Bot connected!');
+    if (qr) {
+      qrcode.generate(qr, { small: true });
+      console.log('📱 Scan the QR above with WhatsApp > Linked Devices');
+    }
+    if (connection === 'open') {
+      console.log('✅ Shadow Monarch Bot connected!');
+    }
     if (connection === 'close') {
       const reason = lastDisconnect?.error?.output?.statusCode;
-      const shouldReconnect = reason !== DisconnectReason.loggedOut;
-      if (shouldReconnect) {
-        console.log('🔄 Reconnecting...');
-        startBot();
+      if (reason === DisconnectReason.loggedOut) {
+        console.log('❌ Bot logged out. Delete auth_info/ and restart.');
+        return;
       }
+      console.log('🔄 Reconnecting in 5s...');
+      setTimeout(() => startBot(), 5000);
     }
   });
 
