@@ -9,13 +9,15 @@ const SL = require('./lib/SLDesign');
 
 const PREFIX = process.env.PREFIX || '.';
 const handler = new CommandHandler(PREFIX);
+const fs = require('fs');
 
 let sock = null;
 let db = null;
+let reconnectTimer = null;
 
 async function startBot() {
-  db = new DB();
-  await db._ready;
+  if (!db) { db = new DB(); await db._ready; }
+  const hasAuth = fs.existsSync('auth_info/creds.json');
   const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
   sock = makeWASocket({
@@ -30,7 +32,7 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
     if (qr) {
       qrcode.generate(qr, { small: true });
-      console.log('📱 Scan the QR above with WhatsApp > Linked Devices');
+      console.log('📱 Scan QR above with WhatsApp > Linked Devices');
     }
     if (connection === 'open') {
       console.log('✅ Shadow Monarch Bot connected!');
@@ -41,8 +43,13 @@ async function startBot() {
         console.log('❌ Bot logged out. Delete auth_info/ and restart.');
         return;
       }
+      if (!hasAuth) {
+        console.log('⏳ Waiting for QR scan. Restart if no scan appears.');
+        return;
+      }
+      if (reconnectTimer) clearTimeout(reconnectTimer);
       console.log('🔄 Reconnecting in 5s...');
-      setTimeout(() => startBot(), 5000);
+      reconnectTimer = setTimeout(() => startBot(), 5000);
     }
   });
 
